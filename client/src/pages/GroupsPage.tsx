@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, X, Users, Crown, User, Mail, Copy, Check, LogOut, Edit3, UserPlus } from 'lucide-react';
+import { Plus, Trash2, X, Users, Crown, User, Mail, Copy, Check, LogOut, UserPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { useGroupStore } from '../stores/groupStore';
@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 export default function GroupsPage() {
   const {
     groups, groupTasks, fetchGroups, fetchGroupTasks, deleteGroup,
-    inviteByEmail, updateMemberRole, leaveGroup, deleteGroupTask
+    updateMemberRole, leaveGroup, deleteGroupTask
   } = useGroupStore();
   const user = useAuthStore((s) => s.user);
   const [showCreate, setShowCreate] = useState(false);
