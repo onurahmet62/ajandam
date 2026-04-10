@@ -1,4 +1,5 @@
 using Ajandam.Core.Enums;
+
 namespace Ajandam.Application.DTOs.Groups;
 
 public class GroupTaskDto
@@ -14,5 +15,10 @@ public class GroupTaskDto
     public Guid? AssignedToUserId { get; set; }
     public string? AssignedToUserName { get; set; }
     public Guid CreatedByUserId { get; set; }
+    public string? CreatedByUserName { get; set; }
     public DateTime CreatedAt { get; set; }
+    public bool AssignedToAll { get; set; }
+    public List<AssigneeDto> Assignees { get; set; } = new();
+    public Guid GroupId { get; set; }
+    public string? GroupName { get; set; }
 }

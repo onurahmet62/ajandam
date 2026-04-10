@@ -2,13 +2,14 @@ using Ajandam.Core.Enums;
 
 namespace Ajandam.Application.DTOs.Groups;
 
-public record CreateGroupTaskDto(
-    string Title,
+public record UpdateGroupTaskDto(
+    string? Title,
     string? Description,
-    Priority Priority,
+    Priority? Priority,
+    TodoStatus? Status,
     DateTime? DueDate,
     DateTime? StartDate,
     DateTime? EndDate,
-    bool AssignedToAll = true,
-    List<Guid>? AssigneeUserIds = null
+    bool? AssignedToAll,
+    List<Guid>? AssigneeUserIds
 );

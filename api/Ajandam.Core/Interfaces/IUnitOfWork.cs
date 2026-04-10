@@ -13,5 +13,6 @@ public interface IUnitOfWork : IDisposable
     IRepository<Group> Groups { get; }
     IRepository<GroupTask> GroupTasks { get; }
     IRepository<TaskTemplate> TaskTemplates { get; }
+    IRepository<GroupInvitation> GroupInvitations { get; }
     Task<int> SaveChangesAsync();
 }

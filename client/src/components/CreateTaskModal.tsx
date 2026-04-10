@@ -57,7 +57,10 @@ export default function CreateTaskModal({ initialStart, initialEnd, onClose }: P
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 animate-fade-in" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800">Yeni Görev</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-gray-800">Yeni Görev</h2>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Kişisel</span>
+          </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500">
             <X size={20} />
           </button>

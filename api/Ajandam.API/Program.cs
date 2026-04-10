@@ -30,6 +30,7 @@ builder.Services.AddScoped<INoteService, NoteService>();
 builder.Services.AddScoped<IJournalService, JournalService>();
 builder.Services.AddScoped<ICountdownService, CountdownService>();
 builder.Services.AddScoped<IGroupService, GroupService>();
+builder.Services.AddScoped<IGroupInvitationService, GroupInvitationService>();
 builder.Services.AddScoped<ITaskTemplateService, TaskTemplateService>();
 
 // AutoMapper
@@ -99,11 +100,11 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Auto migrate (recreate DB to include new IsDeleted column)
+// Auto migrate
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AjandamDbContext>();
-    db.Database.EnsureCreated();
+    db.Database.Migrate();
 }
 
 if (app.Environment.IsDevelopment())

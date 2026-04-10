@@ -14,4 +14,5 @@ public class User : BaseEntity
     public List<Tag> Tags { get; set; } = new();
     public List<UserGroup> UserGroups { get; set; } = new();
     public List<TaskTemplate> TaskTemplates { get; set; } = new();
+    public List<GroupTaskAssignee> GroupTaskAssignments { get; set; } = new();
 }

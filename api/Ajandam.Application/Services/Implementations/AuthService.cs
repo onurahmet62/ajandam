@@ -7,6 +7,7 @@ using Ajandam.Application.DTOs.Auth;
 using Ajandam.Application.Services.Interfaces;
 using Ajandam.Core.Entities;
 using Ajandam.Core.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace Ajandam.Application.Services.Implementations;
 
@@ -14,11 +15,13 @@ public class AuthService : IAuthService
 {
     private readonly IUnitOfWork _uow;
     private readonly IConfiguration _config;
+    private readonly IGroupInvitationService? _invitationService;
 
-    public AuthService(IUnitOfWork uow, IConfiguration config)
+    public AuthService(IUnitOfWork uow, IConfiguration config, IGroupInvitationService? invitationService = null)
     {
         _uow = uow;
         _config = config;
+        _invitationService = invitationService;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
@@ -35,6 +38,10 @@ public class AuthService : IAuthService
         };
         await _uow.Users.AddAsync(user);
         await _uow.SaveChangesAsync();
+
+        // Process pending group invitations for this email
+        if (_invitationService != null)
+            await _invitationService.ProcessPendingOnRegisterAsync(user.Email, user.Id);
 
         var token = GenerateToken(user);
         return new AuthResponseDto(user.Id, user.FullName, user.Email, token, user.ThemeColor);

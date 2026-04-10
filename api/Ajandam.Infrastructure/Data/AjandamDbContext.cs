@@ -18,6 +18,8 @@ public class AjandamDbContext : DbContext
     public DbSet<UserGroup> UserGroups => Set<UserGroup>();
     public DbSet<GroupTask> GroupTasks => Set<GroupTask>();
     public DbSet<TaskTemplate> TaskTemplates => Set<TaskTemplate>();
+    public DbSet<GroupInvitation> GroupInvitations => Set<GroupInvitation>();
+    public DbSet<GroupTaskAssignee> GroupTaskAssignees => Set<GroupTaskAssignee>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -66,6 +68,42 @@ public class AjandamDbContext : DbContext
             .HasForeignKey(gt => gt.AssignedToUserId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        modelBuilder.Entity<GroupTask>()
+            .HasOne(gt => gt.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(gt => gt.CreatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // GroupTaskAssignee composite key
+        modelBuilder.Entity<GroupTaskAssignee>()
+            .HasKey(gta => new { gta.GroupTaskId, gta.UserId });
+
+        modelBuilder.Entity<GroupTaskAssignee>()
+            .HasOne(gta => gta.GroupTask)
+            .WithMany(gt => gt.Assignees)
+            .HasForeignKey(gta => gta.GroupTaskId);
+
+        modelBuilder.Entity<GroupTaskAssignee>()
+            .HasOne(gta => gta.User)
+            .WithMany(u => u.GroupTaskAssignments)
+            .HasForeignKey(gta => gta.UserId);
+
+        // GroupInvitation relationships
+        modelBuilder.Entity<GroupInvitation>()
+            .HasOne(gi => gi.Group)
+            .WithMany(g => g.Invitations)
+            .HasForeignKey(gi => gi.GroupId);
+
+        modelBuilder.Entity<GroupInvitation>()
+            .HasOne(gi => gi.InvitedByUser)
+            .WithMany()
+            .HasForeignKey(gi => gi.InvitedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<GroupInvitation>()
+            .HasIndex(gi => gi.Token)
+            .IsUnique();
+
         // TodoTask self-referencing for recurring
         modelBuilder.Entity<TodoTask>()
             .HasOne<TodoTask>()
@@ -83,6 +121,7 @@ public class AjandamDbContext : DbContext
         modelBuilder.Entity<Group>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<GroupTask>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<TaskTemplate>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<GroupInvitation>().HasQueryFilter(e => !e.IsDeleted);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

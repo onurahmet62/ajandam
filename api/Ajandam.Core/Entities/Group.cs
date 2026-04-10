@@ -7,4 +7,5 @@ public class Group : BaseEntity
 
     public List<UserGroup> UserGroups { get; set; } = new();
     public List<GroupTask> GroupTasks { get; set; } = new();
+    public List<GroupInvitation> Invitations { get; set; } = new();
 }

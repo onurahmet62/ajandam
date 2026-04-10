@@ -26,6 +26,13 @@ export enum GroupRole {
   Member = 1,
 }
 
+export enum InvitationStatus {
+  Pending = 0,
+  Accepted = 1,
+  Rejected = 2,
+  Expired = 3,
+}
+
 export interface User {
   id: string;
   fullName: string;
@@ -103,6 +110,11 @@ export interface GroupMember {
   role: GroupRole;
 }
 
+export interface Assignee {
+  userId: string;
+  fullName: string;
+}
+
 export interface GroupTask {
   id: string;
   title: string;
@@ -115,7 +127,28 @@ export interface GroupTask {
   assignedToUserId?: string;
   assignedToUserName?: string;
   createdByUserId: string;
+  createdByUserName?: string;
   createdAt: string;
+  assignedToAll: boolean;
+  assignees: Assignee[];
+  groupId: string;
+  groupName?: string;
+}
+
+export interface GroupInvitation {
+  id: string;
+  groupId: string;
+  groupName: string;
+  email: string;
+  invitedByName: string;
+  status: InvitationStatus;
+  createdAt: string;
+}
+
+export interface InviteResult {
+  addedDirectly: boolean;
+  invitationLink?: string;
+  message: string;
 }
 
 export interface TaskTemplate {

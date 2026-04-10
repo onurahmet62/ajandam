@@ -21,7 +21,9 @@ public class MappingProfile : Profile
         CreateMap<JournalEntry, JournalEntryDto>();
         CreateMap<Countdown, CountdownDto>();
         CreateMap<GroupTask, GroupTaskDto>()
-            .ForMember(d => d.AssignedToUserName, opt => opt.MapFrom(s => s.AssignedToUser != null ? s.AssignedToUser.FullName : null));
+            .ForMember(d => d.AssignedToUserName, opt => opt.MapFrom(s => s.AssignedToUser != null ? s.AssignedToUser.FullName : null))
+            .ForMember(d => d.GroupName, opt => opt.MapFrom(s => s.Group != null ? s.Group.Name : null))
+            .ForMember(d => d.Assignees, opt => opt.MapFrom(s => s.Assignees.Select(a => new Ajandam.Application.DTOs.Groups.AssigneeDto(a.UserId, a.User != null ? a.User.FullName : ""))));
         CreateMap<TaskTemplate, TaskTemplateDto>();
         CreateMap<User, UserProfileDto>();
     }

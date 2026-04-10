@@ -19,4 +19,8 @@ public class GroupTask : BaseEntity
     public User? AssignedToUser { get; set; }
 
     public Guid CreatedByUserId { get; set; }
+    public User? CreatedByUser { get; set; }
+
+    public bool AssignedToAll { get; set; } = true;
+    public List<GroupTaskAssignee> Assignees { get; set; } = new();
 }
