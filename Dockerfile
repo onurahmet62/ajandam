@@ -1,8 +1,8 @@
 # Stage 1: Build frontend
 FROM node:20-alpine AS frontend-build
 WORKDIR /app/client
-COPY client/package*.json ./
-RUN npm ci
+COPY client/package.json ./
+RUN npm install --ignore-scripts && npm install @rollup/rollup-linux-x64-gnu
 COPY client/ ./
 RUN npm run build
 
