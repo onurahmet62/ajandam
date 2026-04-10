@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Plus, X, Check } from 'lucide-react';
 import { useTaskStore } from '../stores/taskStore';
-import type { Tag } from '../lib/types';
 
 const PRESET_COLORS = [
   '#FFB5A7', '#FFDAB9', '#B5EAD7', '#A7C7E7',

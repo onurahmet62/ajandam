@@ -4,7 +4,7 @@ import { useAuthStore } from '../stores/authStore';
 import { useSyncStore } from '../stores/syncStore';
 import {
   LayoutDashboard, Calendar, ListTodo, StickyNote, BookOpen,
-  Timer, Users, Settings, LogOut, Menu, Search, Cloud, CloudOff, Wifi, WifiOff
+  Timer, Users, Settings, LogOut, Menu, Search, Cloud, CloudOff
 } from 'lucide-react';
 
 const navItems = [
