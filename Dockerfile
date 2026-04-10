@@ -2,7 +2,7 @@
 FROM node:20-alpine AS frontend-build
 WORKDIR /app/client
 COPY client/package.json ./
-RUN npm install --ignore-scripts && npm install @rollup/rollup-linux-x64-gnu
+RUN npm install --force
 COPY client/ ./
 RUN npm run build
 
