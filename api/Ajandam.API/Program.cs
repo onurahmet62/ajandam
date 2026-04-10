@@ -100,11 +100,62 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Auto migrate
+// Auto create/update database
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AjandamDbContext>();
-    db.Database.Migrate();
+    db.Database.EnsureCreated();
+
+    // Schema migrations: add missing columns/tables for existing DBs
+    var alterStatements = new[]
+    {
+        "ALTER TABLE Users ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
+        "ALTER TABLE TodoTasks ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
+        "ALTER TABLE Tags ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
+        "ALTER TABLE Notes ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
+        "ALTER TABLE JournalEntries ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
+        "ALTER TABLE Countdowns ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
+        "ALTER TABLE Groups ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
+        "ALTER TABLE GroupTasks ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
+        "ALTER TABLE TaskTemplates ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
+        "ALTER TABLE GroupTasks ADD COLUMN AssignedToAll INTEGER NOT NULL DEFAULT 1;",
+    };
+    foreach (var sql in alterStatements)
+    {
+        try { db.Database.ExecuteSqlRaw(sql); } catch { /* column already exists */ }
+    }
+
+    // New tables (safe: CREATE IF NOT EXISTS)
+    db.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS GroupInvitations (
+            Id TEXT NOT NULL PRIMARY KEY,
+            GroupId TEXT NOT NULL,
+            Email TEXT NOT NULL,
+            InvitedByUserId TEXT NOT NULL,
+            Token TEXT NOT NULL,
+            Status INTEGER NOT NULL DEFAULT 0,
+            ExpiresAt TEXT NOT NULL,
+            CreatedAt TEXT NOT NULL,
+            UpdatedAt TEXT,
+            IsDeleted INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (GroupId) REFERENCES Groups(Id) ON DELETE CASCADE,
+            FOREIGN KEY (InvitedByUserId) REFERENCES Users(Id) ON DELETE RESTRICT
+        );
+    ");
+    db.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS GroupTaskAssignees (
+            GroupTaskId TEXT NOT NULL,
+            UserId TEXT NOT NULL,
+            PRIMARY KEY (GroupTaskId, UserId),
+            FOREIGN KEY (GroupTaskId) REFERENCES GroupTasks(Id) ON DELETE CASCADE,
+            FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE
+        );
+    ");
+    db.Database.ExecuteSqlRaw("CREATE UNIQUE INDEX IF NOT EXISTS IX_GroupInvitations_Token ON GroupInvitations(Token);");
+    db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_GroupInvitations_GroupId ON GroupInvitations(GroupId);");
+    db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_GroupInvitations_InvitedByUserId ON GroupInvitations(InvitedByUserId);");
+    db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_GroupTaskAssignees_UserId ON GroupTaskAssignees(UserId);");
+    db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_GroupTasks_CreatedByUserId ON GroupTasks(CreatedByUserId);");
 }
 
 if (app.Environment.IsDevelopment())
