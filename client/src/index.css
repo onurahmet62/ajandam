@@ -1,0 +1,162 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --theme-color: #A7C7E7;
+}
+
+body {
+  @apply bg-gray-50 text-gray-800 antialiased;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+/* React Big Calendar Pastel Override */
+.rbc-calendar {
+  @apply bg-white rounded-2xl shadow-sm border border-gray-100;
+}
+.rbc-header {
+  @apply bg-gray-50 py-3 text-sm font-semibold text-gray-600 border-b border-gray-100;
+}
+.rbc-today {
+  background-color: color-mix(in srgb, var(--theme-color) 15%, white) !important;
+}
+.rbc-event {
+  background-color: var(--theme-color) !important;
+  @apply rounded-lg border-none text-sm px-2 py-1 shadow-sm;
+}
+.rbc-event:hover {
+  filter: brightness(0.95);
+}
+.rbc-toolbar button {
+  @apply rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors;
+}
+.rbc-toolbar button:hover {
+  @apply bg-gray-100;
+}
+.rbc-toolbar button.rbc-active {
+  background-color: var(--theme-color) !important;
+  @apply text-white shadow-sm;
+}
+.rbc-off-range-bg {
+  background-color: rgb(249 250 251 / 0.5);
+}
+.rbc-date-cell {
+  @apply text-sm p-2;
+}
+.rbc-time-slot {
+  @apply border-gray-100;
+}
+.rbc-time-header-gutter {
+  @apply bg-gray-50;
+}
+.rbc-timeslot-group {
+  @apply border-gray-100;
+}
+.rbc-day-slot .rbc-time-slot {
+  @apply border-t border-gray-50;
+}
+
+/* Calendar slot hover "+" button */
+.calendar-slot-hover .rbc-day-slot .rbc-time-slot {
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.calendar-slot-hover .rbc-day-slot .rbc-time-slot:hover {
+  background-color: color-mix(in srgb, var(--theme-color) 8%, white);
+}
+.calendar-slot-hover .rbc-day-slot .rbc-time-slot::after {
+  content: '+';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: var(--theme-color);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 22px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+.calendar-slot-hover .rbc-day-slot .rbc-time-slot:hover::after {
+  opacity: 1;
+}
+
+/* Month view date cell hover "+" */
+.calendar-slot-hover .rbc-month-row .rbc-row-bg .rbc-day-bg {
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.calendar-slot-hover .rbc-month-row .rbc-row-bg .rbc-day-bg:hover {
+  background-color: color-mix(in srgb, var(--theme-color) 8%, white);
+}
+.calendar-slot-hover .rbc-month-row .rbc-row-bg .rbc-day-bg::after {
+  content: '+';
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: var(--theme-color);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 22px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+.calendar-slot-hover .rbc-month-row .rbc-row-bg .rbc-day-bg:hover::after {
+  opacity: 1;
+}
+
+/* TipTap Editor */
+.tiptap-editor .ProseMirror {
+  @apply p-4 outline-none;
+  min-height: 200px;
+}
+.tiptap-editor .ProseMirror p.is-editor-empty:first-child::before {
+  @apply text-gray-400 float-left pointer-events-none h-0;
+  content: attr(data-placeholder);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-200 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-300;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in {
+  animation: slideIn 0.25s ease-out;
+}

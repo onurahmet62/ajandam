@@ -1,0 +1,130 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Ajandam.API.Hubs;
+using Ajandam.Application.Mapping;
+using Ajandam.Application.Services.Implementations;
+using Ajandam.Application.Services.Interfaces;
+using Ajandam.Core.Interfaces;
+using Ajandam.Infrastructure.Data;
+using Ajandam.Infrastructure.Repositories;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Database
+builder.Services.AddDbContext<AjandamDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Repositories
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// Services
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITodoTaskService, TodoTaskService>();
+builder.Services.AddScoped<ITagService, TagService>();
+builder.Services.AddScoped<INoteService, NoteService>();
+builder.Services.AddScoped<IJournalService, JournalService>();
+builder.Services.AddScoped<ICountdownService, CountdownService>();
+builder.Services.AddScoped<IGroupService, GroupService>();
+builder.Services.AddScoped<ITaskTemplateService, TaskTemplateService>();
+
+// AutoMapper
+builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+// JWT Authentication
+var jwtKey = builder.Configuration["Jwt:Key"]!;
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+
+        // Allow SignalR to use JWT from query string
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+// CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowClient", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
+// SignalR
+builder.Services.AddSignalR();
+
+// Sync services
+builder.Services.AddSingleton<Ajandam.API.Services.SyncTokenStore>();
+builder.Services.AddHttpClient("SyncClient");
+if (!string.IsNullOrWhiteSpace(builder.Configuration["Sync:RemoteUrl"]))
+{
+    builder.Services.AddHostedService<Ajandam.API.Services.BackgroundSyncService>();
+}
+
+// Controllers + Swagger
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+// Auto migrate (recreate DB to include new IsDeleted column)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AjandamDbContext>();
+    db.Database.EnsureCreated();
+}
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseCors("AllowClient");
+
+// Serve React static files in production
+if (!app.Environment.IsDevelopment())
+{
+    app.UseDefaultFiles();
+    app.UseStaticFiles();
+}
+
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+app.MapHub<GroupHub>("/hubs/group");
+
+// SPA fallback: serve index.html for non-API, non-file routes
+if (!app.Environment.IsDevelopment())
+{
+    app.MapFallbackToFile("index.html");
+}
+
+app.Run();
