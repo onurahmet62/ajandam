@@ -151,6 +151,14 @@ export interface InviteResult {
   message: string;
 }
 
+export interface SpecialDay {
+  id: string;
+  title: string;
+  date: string;
+  isYearly: boolean;
+  color: string;
+}
+
 export interface TaskTemplate {
   id: string;
   name: string;

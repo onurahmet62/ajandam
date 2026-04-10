@@ -17,6 +17,7 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<GroupTask>? _groupTasks;
     private IRepository<TaskTemplate>? _taskTemplates;
     private IRepository<GroupInvitation>? _groupInvitations;
+    private IRepository<SpecialDay>? _specialDays;
 
     public UnitOfWork(AjandamDbContext context)
     {
@@ -33,6 +34,7 @@ public class UnitOfWork : IUnitOfWork
     public IRepository<GroupTask> GroupTasks => _groupTasks ??= new Repository<GroupTask>(_context);
     public IRepository<TaskTemplate> TaskTemplates => _taskTemplates ??= new Repository<TaskTemplate>(_context);
     public IRepository<GroupInvitation> GroupInvitations => _groupInvitations ??= new Repository<GroupInvitation>(_context);
+    public IRepository<SpecialDay> SpecialDays => _specialDays ??= new Repository<SpecialDay>(_context);
 
     public async Task<int> SaveChangesAsync() => await _context.SaveChangesAsync();
 

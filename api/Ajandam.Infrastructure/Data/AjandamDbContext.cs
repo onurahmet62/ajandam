@@ -20,6 +20,7 @@ public class AjandamDbContext : DbContext
     public DbSet<TaskTemplate> TaskTemplates => Set<TaskTemplate>();
     public DbSet<GroupInvitation> GroupInvitations => Set<GroupInvitation>();
     public DbSet<GroupTaskAssignee> GroupTaskAssignees => Set<GroupTaskAssignee>();
+    public DbSet<SpecialDay> SpecialDays => Set<SpecialDay>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -122,6 +123,7 @@ public class AjandamDbContext : DbContext
         modelBuilder.Entity<GroupTask>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<TaskTemplate>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<GroupInvitation>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<SpecialDay>().HasQueryFilter(e => !e.IsDeleted);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

@@ -32,6 +32,7 @@ builder.Services.AddScoped<ICountdownService, CountdownService>();
 builder.Services.AddScoped<IGroupService, GroupService>();
 builder.Services.AddScoped<IGroupInvitationService, GroupInvitationService>();
 builder.Services.AddScoped<ITaskTemplateService, TaskTemplateService>();
+builder.Services.AddScoped<ISpecialDayService, SpecialDayService>();
 
 // AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfile));
@@ -156,6 +157,21 @@ using (var scope = app.Services.CreateScope())
     db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_GroupInvitations_InvitedByUserId ON GroupInvitations(InvitedByUserId);");
     db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_GroupTaskAssignees_UserId ON GroupTaskAssignees(UserId);");
     db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_GroupTasks_CreatedByUserId ON GroupTasks(CreatedByUserId);");
+    db.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS SpecialDays (
+            Id TEXT NOT NULL PRIMARY KEY,
+            Title TEXT NOT NULL,
+            Date TEXT NOT NULL,
+            IsYearly INTEGER NOT NULL DEFAULT 1,
+            Color TEXT NOT NULL DEFAULT '#EC4899',
+            UserId TEXT NOT NULL,
+            CreatedAt TEXT NOT NULL,
+            UpdatedAt TEXT,
+            IsDeleted INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE
+        );
+    ");
+    db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_SpecialDays_UserId ON SpecialDays(UserId);");
 }
 
 if (app.Environment.IsDevelopment())
