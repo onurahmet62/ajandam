@@ -12,9 +12,12 @@ using Ajandam.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Database
-builder.Services.AddDbContext<AjandamDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Database - support DATA_DIR env for persistent storage (Render, Docker)
+var dataDir = Environment.GetEnvironmentVariable("DATA_DIR");
+var connStr = string.IsNullOrEmpty(dataDir)
+    ? builder.Configuration.GetConnectionString("DefaultConnection")!
+    : $"Data Source={Path.Combine(dataDir, "ajandam.db")}";
+builder.Services.AddDbContext<AjandamDbContext>(options => options.UseSqlite(connStr));
 
 // Repositories
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -69,7 +72,9 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowClient", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
+        var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>()
+            ?? new[] { "http://localhost:5173", "http://localhost:3000" };
+        policy.WithOrigins(origins)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();

@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: ajandam-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+    disk:
+      name: ajandam-data
+      mountPath: /app/data
+      sizeGB: 1
