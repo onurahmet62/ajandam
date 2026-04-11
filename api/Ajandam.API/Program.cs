@@ -12,12 +12,23 @@ using Ajandam.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Database - support DATA_DIR env for persistent storage (Render, Docker)
-var dataDir = Environment.GetEnvironmentVariable("DATA_DIR");
-var connStr = string.IsNullOrEmpty(dataDir)
-    ? builder.Configuration.GetConnectionString("DefaultConnection")!
-    : $"Data Source={Path.Combine(dataDir, "ajandam.db")}";
-builder.Services.AddDbContext<AjandamDbContext>(options => options.UseSqlite(connStr));
+// Database - PostgreSQL for production (DATABASE_URL), SQLite for local dev
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+var usePostgres = !string.IsNullOrEmpty(databaseUrl);
+
+if (usePostgres)
+{
+    // Render provides DATABASE_URL as postgres:// — convert to Npgsql format
+    var uri = new Uri(databaseUrl!);
+    var userInfo = uri.UserInfo.Split(':');
+    var pgConnStr = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+    builder.Services.AddDbContext<AjandamDbContext>(options => options.UseNpgsql(pgConnStr));
+}
+else
+{
+    var connStr = builder.Configuration.GetConnectionString("DefaultConnection")!;
+    builder.Services.AddDbContext<AjandamDbContext>(options => options.UseSqlite(connStr));
+}
 
 // Repositories
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -107,71 +118,74 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AjandamDbContext>();
     db.Database.EnsureCreated();
 
-    // Schema migrations: add missing columns/tables for existing DBs
-    var alterStatements = new[]
+    // Schema migrations only needed for SQLite (existing local DBs)
+    // PostgreSQL gets a fresh schema from EnsureCreated on first run
+    if (!usePostgres)
     {
-        "ALTER TABLE Users ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
-        "ALTER TABLE TodoTasks ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
-        "ALTER TABLE Tags ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
-        "ALTER TABLE Notes ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
-        "ALTER TABLE JournalEntries ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
-        "ALTER TABLE Countdowns ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
-        "ALTER TABLE Groups ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
-        "ALTER TABLE GroupTasks ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
-        "ALTER TABLE TaskTemplates ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
-        "ALTER TABLE GroupTasks ADD COLUMN AssignedToAll INTEGER NOT NULL DEFAULT 1;",
-    };
-    foreach (var sql in alterStatements)
-    {
-        try { db.Database.ExecuteSqlRaw(sql); } catch { /* column already exists */ }
-    }
+        var alterStatements = new[]
+        {
+            "ALTER TABLE Users ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE TodoTasks ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE Tags ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE Notes ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE JournalEntries ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE Countdowns ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE Groups ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE GroupTasks ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE TaskTemplates ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE GroupTasks ADD COLUMN AssignedToAll INTEGER NOT NULL DEFAULT 1;",
+        };
+        foreach (var sql in alterStatements)
+        {
+            try { db.Database.ExecuteSqlRaw(sql); } catch { /* column already exists */ }
+        }
 
-    // New tables (safe: CREATE IF NOT EXISTS)
-    db.Database.ExecuteSqlRaw(@"
-        CREATE TABLE IF NOT EXISTS GroupInvitations (
-            Id TEXT NOT NULL PRIMARY KEY,
-            GroupId TEXT NOT NULL,
-            Email TEXT NOT NULL,
-            InvitedByUserId TEXT NOT NULL,
-            Token TEXT NOT NULL,
-            Status INTEGER NOT NULL DEFAULT 0,
-            ExpiresAt TEXT NOT NULL,
-            CreatedAt TEXT NOT NULL,
-            UpdatedAt TEXT,
-            IsDeleted INTEGER NOT NULL DEFAULT 0,
-            FOREIGN KEY (GroupId) REFERENCES Groups(Id) ON DELETE CASCADE,
-            FOREIGN KEY (InvitedByUserId) REFERENCES Users(Id) ON DELETE RESTRICT
-        );
-    ");
-    db.Database.ExecuteSqlRaw(@"
-        CREATE TABLE IF NOT EXISTS GroupTaskAssignees (
-            GroupTaskId TEXT NOT NULL,
-            UserId TEXT NOT NULL,
-            PRIMARY KEY (GroupTaskId, UserId),
-            FOREIGN KEY (GroupTaskId) REFERENCES GroupTasks(Id) ON DELETE CASCADE,
-            FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE
-        );
-    ");
-    db.Database.ExecuteSqlRaw("CREATE UNIQUE INDEX IF NOT EXISTS IX_GroupInvitations_Token ON GroupInvitations(Token);");
-    db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_GroupInvitations_GroupId ON GroupInvitations(GroupId);");
-    db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_GroupInvitations_InvitedByUserId ON GroupInvitations(InvitedByUserId);");
-    db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_GroupTaskAssignees_UserId ON GroupTaskAssignees(UserId);");
-    db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_GroupTasks_CreatedByUserId ON GroupTasks(CreatedByUserId);");
-    db.Database.ExecuteSqlRaw(@"
-        CREATE TABLE IF NOT EXISTS SpecialDays (
-            Id TEXT NOT NULL PRIMARY KEY,
-            Title TEXT NOT NULL,
-            Date TEXT NOT NULL,
-            IsYearly INTEGER NOT NULL DEFAULT 1,
-            Color TEXT NOT NULL DEFAULT '#EC4899',
-            UserId TEXT NOT NULL,
-            CreatedAt TEXT NOT NULL,
-            UpdatedAt TEXT,
-            IsDeleted INTEGER NOT NULL DEFAULT 0,
-            FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE
-        );
-    ");
-    db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_SpecialDays_UserId ON SpecialDays(UserId);");
+        db.Database.ExecuteSqlRaw(@"
+            CREATE TABLE IF NOT EXISTS GroupInvitations (
+                Id TEXT NOT NULL PRIMARY KEY,
+                GroupId TEXT NOT NULL,
+                Email TEXT NOT NULL,
+                InvitedByUserId TEXT NOT NULL,
+                Token TEXT NOT NULL,
+                Status INTEGER NOT NULL DEFAULT 0,
+                ExpiresAt TEXT NOT NULL,
+                CreatedAt TEXT NOT NULL,
+                UpdatedAt TEXT,
+                IsDeleted INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY (GroupId) REFERENCES Groups(Id) ON DELETE CASCADE,
+                FOREIGN KEY (InvitedByUserId) REFERENCES Users(Id) ON DELETE RESTRICT
+            );
+        ");
+        db.Database.ExecuteSqlRaw(@"
+            CREATE TABLE IF NOT EXISTS GroupTaskAssignees (
+                GroupTaskId TEXT NOT NULL,
+                UserId TEXT NOT NULL,
+                PRIMARY KEY (GroupTaskId, UserId),
+                FOREIGN KEY (GroupTaskId) REFERENCES GroupTasks(Id) ON DELETE CASCADE,
+                FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE
+            );
+        ");
+        db.Database.ExecuteSqlRaw("CREATE UNIQUE INDEX IF NOT EXISTS IX_GroupInvitations_Token ON GroupInvitations(Token);");
+        db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_GroupInvitations_GroupId ON GroupInvitations(GroupId);");
+        db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_GroupInvitations_InvitedByUserId ON GroupInvitations(InvitedByUserId);");
+        db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_GroupTaskAssignees_UserId ON GroupTaskAssignees(UserId);");
+        db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_GroupTasks_CreatedByUserId ON GroupTasks(CreatedByUserId);");
+        db.Database.ExecuteSqlRaw(@"
+            CREATE TABLE IF NOT EXISTS SpecialDays (
+                Id TEXT NOT NULL PRIMARY KEY,
+                Title TEXT NOT NULL,
+                Date TEXT NOT NULL,
+                IsYearly INTEGER NOT NULL DEFAULT 1,
+                Color TEXT NOT NULL DEFAULT '#EC4899',
+                UserId TEXT NOT NULL,
+                CreatedAt TEXT NOT NULL,
+                UpdatedAt TEXT,
+                IsDeleted INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE
+            );
+        ");
+        db.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_SpecialDays_UserId ON SpecialDays(UserId);");
+    }
 }
 
 if (app.Environment.IsDevelopment())

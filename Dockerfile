@@ -17,12 +17,9 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /app
 COPY --from=backend-build /publish ./
 COPY --from=frontend-build /app/client/dist ./wwwroot/
-RUN mkdir -p /app/data
-
 # Render uses PORT env variable
 ENV ASPNETCORE_URLS=http://+:${PORT:-10000}
 ENV ASPNETCORE_ENVIRONMENT=Production
-ENV DATA_DIR=/app/data
 
 EXPOSE 10000
 ENTRYPOINT ["dotnet", "Ajandam.API.dll"]
