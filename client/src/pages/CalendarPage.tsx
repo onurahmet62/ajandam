@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Calendar, dateFnsLocalizer, type View, type SlotInfo } from 'react-big-calendar';
+import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
+import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 import { format, parse, startOfWeek, getDay, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -13,9 +15,11 @@ import TaskModal from '../components/TaskModal';
 import CreateTaskModal from '../components/CreateTaskModal';
 import GroupTaskModal from '../components/GroupTaskModal';
 import { Plus, Filter, X, Users, Star, Cake, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const locales = { 'tr': tr };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
+const DnDCalendar = withDragAndDrop<CalendarEvent>(Calendar);
 
 const messages = {
   allDay: 'Tüm gün',
@@ -54,7 +58,7 @@ interface CalendarEvent {
 }
 
 export default function CalendarPage() {
-  const { tasks, tags, fetchTasksByRange, fetchTags } = useTaskStore();
+  const { tasks, tags, fetchTasksByRange, fetchTags, rescheduleTask } = useTaskStore();
   const { myGroupTasks, fetchMyGroupTasks, groups, fetchGroups } = useGroupStore();
   const { specialDays, fetchAll: fetchSpecialDays, create: createSpecialDay, remove: removeSpecialDay } = useSpecialDayStore();
   const user = useAuthStore((s) => s.user);
@@ -141,20 +145,34 @@ export default function CalendarPage() {
     return events;
   }, [specialDays, date]);
 
+  const isFullDay = (start: Date, end: Date) => {
+    return start.getHours() === 0 && start.getMinutes() === 0 &&
+      ((end.getHours() === 23 && end.getMinutes() === 59) ||
+       (end.getHours() === 0 && end.getMinutes() === 0));
+  };
+
   const events: CalendarEvent[] = useMemo(() => {
     const personalEvents: CalendarEvent[] = filteredTasks
       .filter((t) => t.startDate || t.dueDate)
-      .map((t) => ({
-        id: t.id,
-        title: t.title,
-        start: new Date(t.startDate || t.dueDate!),
-        end: new Date(t.endDate || t.dueDate || t.startDate!),
-        resource: t,
-        groupTask: null,
-        isGroupTask: false,
-        holiday: null,
-        specialDay: null,
-      }));
+      .map((t) => {
+        const start = new Date(t.startDate || t.dueDate!);
+        const end = new Date(t.endDate || t.dueDate || t.startDate!);
+        // Başlangıç ve bitiş aynı anda ise (endDate yok) veya 00:00-23:59 ise allDay
+        const sameTime = start.getTime() === end.getTime();
+        const allDay = sameTime || isFullDay(start, end);
+        return {
+          id: t.id,
+          title: t.title,
+          start,
+          end: sameTime ? new Date(start.getFullYear(), start.getMonth(), start.getDate(), 23, 59) : end,
+          allDay,
+          resource: t,
+          groupTask: null,
+          isGroupTask: false,
+          holiday: null,
+          specialDay: null,
+        };
+      });
 
     const groupEvents: CalendarEvent[] = filteredGroupTasks
       .filter((t) => t.startDate || t.dueDate)
@@ -291,6 +309,23 @@ export default function CalendarPage() {
     }
     setShowCreateModal(true);
   }, [view]);
+
+  const handleEventDrop = useCallback(async ({ event, start, end }: { event: CalendarEvent; start: string | Date; end: string | Date }) => {
+    if (!event.resource || event.isGroupTask || event.holiday || event.specialDay) return;
+    const newStart = new Date(start);
+    const newEnd = new Date(end);
+    try {
+      await rescheduleTask(
+        event.resource.id,
+        newStart.toISOString(),
+        event.resource.endDate ? newEnd.toISOString() : undefined,
+        event.resource.dueDate ? newStart.toISOString() : undefined,
+      );
+      toast.success('Görev taşındı');
+    } catch {
+      toast.error('Görev taşınamadı');
+    }
+  }, [rescheduleTask]);
 
   const handleCloseCreate = () => {
     setShowCreateModal(false);
@@ -473,7 +508,7 @@ export default function CalendarPage() {
       )}
 
       <div className="bg-white rounded-2xl border border-gray-100 p-4 calendar-slot-hover" style={{ height: 'calc(100vh - 200px)' }}>
-        <Calendar
+        <DnDCalendar
           localizer={localizer}
           events={events}
           startAccessor="start"
@@ -487,6 +522,10 @@ export default function CalendarPage() {
           eventPropGetter={eventStyleGetter}
           onSelectEvent={handleSelectEvent}
           onSelectSlot={handleSelectSlot}
+          onEventDrop={handleEventDrop}
+          onEventResize={handleEventDrop}
+          draggableAccessor={(event) => !!event.resource && !event.isGroupTask && !event.holiday && !event.specialDay}
+          resizable={false}
           selectable
           popup
         />

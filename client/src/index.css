@@ -22,7 +22,6 @@ body {
   background-color: color-mix(in srgb, var(--theme-color) 15%, white) !important;
 }
 .rbc-event {
-  background-color: var(--theme-color) !important;
   @apply rounded-lg border-none text-sm px-2 py-1 shadow-sm;
 }
 .rbc-event:hover {
