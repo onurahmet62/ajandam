@@ -12,6 +12,9 @@ using Ajandam.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Npgsql: allow DateTime without explicit Kind (legacy behavior)
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 // Database - PostgreSQL for production (DATABASE_URL), SQLite for local dev
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 var usePostgres = !string.IsNullOrEmpty(databaseUrl);
