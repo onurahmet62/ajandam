@@ -57,14 +57,14 @@ body {
   @apply border-t border-gray-50;
 }
 
-/* Calendar slot hover "+" button */
+/* Calendar slot hover "+" button — Week & Day views */
 .calendar-slot-hover .rbc-day-slot .rbc-time-slot {
   position: relative;
   cursor: pointer;
   transition: background-color 0.15s ease;
 }
 .calendar-slot-hover .rbc-day-slot .rbc-time-slot:hover {
-  background-color: color-mix(in srgb, var(--theme-color) 8%, white);
+  background-color: color-mix(in srgb, #3B82F6 10%, white);
 }
 .calendar-slot-hover .rbc-day-slot .rbc-time-slot::after {
   content: '+';
@@ -72,18 +72,19 @@ body {
   right: 8px;
   top: 50%;
   transform: translateY(-50%);
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background-color: var(--theme-color);
+  background-color: #3B82F6;
   color: white;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 22px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 24px;
   text-align: center;
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
   pointer-events: none;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
 }
 .calendar-slot-hover .rbc-day-slot .rbc-time-slot:hover::after {
   opacity: 1;
@@ -96,25 +97,26 @@ body {
   transition: background-color 0.15s ease;
 }
 .calendar-slot-hover .rbc-month-row .rbc-row-bg .rbc-day-bg:hover {
-  background-color: color-mix(in srgb, var(--theme-color) 8%, white);
+  background-color: color-mix(in srgb, #3B82F6 8%, white);
 }
 .calendar-slot-hover .rbc-month-row .rbc-row-bg .rbc-day-bg::after {
   content: '+';
   position: absolute;
   right: 6px;
   bottom: 6px;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background-color: var(--theme-color);
+  background-color: #3B82F6;
   color: white;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 22px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 24px;
   text-align: center;
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.2s ease;
   pointer-events: none;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
 }
 .calendar-slot-hover .rbc-month-row .rbc-row-bg .rbc-day-bg:hover::after {
   opacity: 1;

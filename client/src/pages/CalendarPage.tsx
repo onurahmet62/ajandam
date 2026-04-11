@@ -245,14 +245,18 @@ export default function CalendarPage() {
         },
       };
     }
+    // Etiket rengi varsa onu kullan, yoksa priority rengi
+    const tagColor = event.resource?.tags?.[0]?.color;
+    const bgColor = tagColor || (event.resource ? PriorityColors[event.resource.priority] : '#A7C7E7');
     return {
       style: {
-        backgroundColor: event.resource ? PriorityColors[event.resource.priority] : '#A7C7E7',
-        color: '#4a5568',
+        backgroundColor: bgColor,
+        color: 'white',
         borderRadius: '8px',
         border: 'none',
         padding: '2px 6px',
         fontSize: '12px',
+        fontWeight: 500,
       },
     };
   };
@@ -273,10 +277,20 @@ export default function CalendarPage() {
   };
 
   const handleSelectSlot = useCallback((slotInfo: SlotInfo) => {
-    setSlotStart(slotInfo.start);
-    setSlotEnd(slotInfo.end);
+    if (view === 'month') {
+      // Ay görünümünde tıklanan günün 00:00 - 23:59 arası
+      const dayStart = new Date(slotInfo.start);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(slotInfo.start);
+      dayEnd.setHours(23, 59, 0, 0);
+      setSlotStart(dayStart);
+      setSlotEnd(dayEnd);
+    } else {
+      setSlotStart(slotInfo.start);
+      setSlotEnd(slotInfo.end);
+    }
     setShowCreateModal(true);
-  }, []);
+  }, [view]);
 
   const handleCloseCreate = () => {
     setShowCreateModal(false);
@@ -340,24 +354,23 @@ export default function CalendarPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowFilter(!showFilter)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 ${
               activeFilterCount > 0
-                ? 'border-[var(--theme-color)] text-[var(--theme-color)] bg-[color-mix(in_srgb,var(--theme-color)_8%,white)]'
-                : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                ? 'border-[#8B5CF6] text-[#8B5CF6] bg-purple-50 shadow-sm'
+                : 'border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
             }`}
           >
             <Filter size={16} />
             Filtre
             {activeFilterCount > 0 && (
-              <span className="ml-1 w-5 h-5 rounded-full text-xs text-white flex items-center justify-center"
-                style={{ backgroundColor: 'var(--theme-color)' }}>
+              <span className="ml-1 w-5 h-5 rounded-full text-xs text-white flex items-center justify-center bg-[#8B5CF6]">
                 {activeFilterCount}
               </span>
             )}
           </button>
           <button
             onClick={() => setShowAddSpecialDay(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border border-pink-200 text-pink-600 hover:bg-pink-50"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 border-pink-300 text-pink-600 hover:bg-pink-100 hover:border-pink-400 active:bg-pink-200"
           >
             <Cake size={16} />
             Özel Gün
@@ -368,8 +381,8 @@ export default function CalendarPage() {
               setSlotEnd(new Date());
               setShowCreateModal(true);
             }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-medium transition-all hover:opacity-90"
-            style={{ backgroundColor: 'var(--theme-color)' }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-semibold transition-all shadow-md hover:shadow-lg active:scale-[0.97]"
+            style={{ backgroundColor: '#3B82F6' }}
           >
             <Plus size={18} />
             Yeni Görev

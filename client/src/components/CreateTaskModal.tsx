@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, CalendarPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { useTaskStore } from '../stores/taskStore';
 import { Priority, PriorityLabels, RecurrenceType } from '../lib/types';
@@ -21,6 +21,7 @@ export default function CreateTaskModal({ initialStart, initialEnd, onClose }: P
   const [startDate, setStartDate] = useState(
     initialStart ? format(initialStart, "yyyy-MM-dd'T'HH:mm") : ''
   );
+  const [endDateEnabled, setEndDateEnabled] = useState(false);
   const [endDate, setEndDate] = useState(
     initialEnd ? format(initialEnd, "yyyy-MM-dd'T'HH:mm") : ''
   );
@@ -38,7 +39,7 @@ export default function CreateTaskModal({ initialStart, initialEnd, onClose }: P
         description: description || undefined,
         priority,
         startDate: startDate ? new Date(startDate).toISOString() : undefined,
-        endDate: endDate ? new Date(endDate).toISOString() : undefined,
+        endDate: endDateEnabled && endDate ? new Date(endDate).toISOString() : undefined,
         dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
         recurrenceType: RecurrenceType.None,
         recurrenceInterval: 0,
@@ -93,17 +94,31 @@ export default function CreateTaskModal({ initialStart, initialEnd, onClose }: P
 
           <TagPicker selectedTagIds={selectedTagIds} onChange={setSelectedTagIds} />
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1.5">Başlangıç</label>
-              <input type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)] focus:border-transparent" />
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1.5">Başlangıç</label>
+            <input type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)] focus:border-transparent" />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-sm font-medium text-gray-600">Bitiş</label>
+              <button
+                type="button"
+                onClick={() => setEndDateEnabled(!endDateEnabled)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                  endDateEnabled ? 'bg-[#3B82F6]' : 'bg-gray-300'
+                }`}
+              >
+                <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-sm ${
+                  endDateEnabled ? 'translate-x-[18px]' : 'translate-x-[3px]'
+                }`} />
+              </button>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1.5">Bitiş</label>
+            {endDateEnabled && (
               <input type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)] focus:border-transparent" />
-            </div>
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)] focus:border-transparent animate-fade-in" />
+            )}
           </div>
 
           <div>
@@ -115,12 +130,13 @@ export default function CreateTaskModal({ initialStart, initialEnd, onClose }: P
 
         <div className="flex items-center justify-end p-6 border-t border-gray-100 gap-3">
           <button onClick={onClose}
-            className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+            className="px-5 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors">
             İptal
           </button>
           <button onClick={handleSave} disabled={saving || !title.trim()}
-            className="px-5 py-2.5 rounded-xl text-white text-sm font-medium transition-all hover:opacity-90 disabled:opacity-50"
-            style={{ backgroundColor: 'var(--theme-color)' }}>
+            className="px-5 py-2.5 rounded-xl text-white text-sm font-semibold transition-all shadow-md hover:shadow-lg active:scale-[0.97] disabled:opacity-50 disabled:shadow-none flex items-center gap-2"
+            style={{ backgroundColor: '#3B82F6' }}>
+            <CalendarPlus size={16} />
             {saving ? 'Kaydediliyor...' : 'Oluştur'}
           </button>
         </div>
