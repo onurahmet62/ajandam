@@ -9,7 +9,7 @@ import { useTaskStore } from '../stores/taskStore';
 import { useGroupStore } from '../stores/groupStore';
 import { useAuthStore } from '../stores/authStore';
 import { useSpecialDayStore } from '../stores/specialDayStore';
-import { PriorityColors, GroupRole, type TodoTask, type GroupTask, type SpecialDay } from '../lib/types';
+import { Priority, PriorityColors, PriorityLabels, GroupRole, type TodoTask, type GroupTask, type SpecialDay } from '../lib/types';
 import { getStaticHolidays, HOLIDAY_COLORS, type StaticHoliday } from '../lib/turkishHolidays';
 import TaskModal from '../components/TaskModal';
 import CreateTaskModal from '../components/CreateTaskModal';
@@ -73,6 +73,7 @@ export default function CalendarPage() {
   const [slotEnd, setSlotEnd] = useState<Date | undefined>();
   const [filterTagIds, setFilterTagIds] = useState<string[]>([]);
   const [filterGroupIds, setFilterGroupIds] = useState<string[]>([]);
+  const [filterPriorities, setFilterPriorities] = useState<Priority[]>([]);
   const [showFilter, setShowFilter] = useState(false);
   const [showHolidays, setShowHolidays] = useState(true);
   const [showSpecialDays, setShowSpecialDays] = useState(true);
@@ -94,11 +95,15 @@ export default function CalendarPage() {
   }, [date]);
 
   const filteredTasks = useMemo(() => {
-    if (filterTagIds.length === 0) return tasks;
-    return tasks.filter((t) =>
-      t.tags.some((tag) => filterTagIds.includes(tag.id))
-    );
-  }, [tasks, filterTagIds]);
+    let result = tasks;
+    if (filterTagIds.length > 0) {
+      result = result.filter((t) => t.tags.some((tag) => filterTagIds.includes(tag.id)));
+    }
+    if (filterPriorities.length > 0) {
+      result = result.filter((t) => filterPriorities.includes(t.priority));
+    }
+    return result;
+  }, [tasks, filterTagIds, filterPriorities]);
 
   const filteredGroupTasks = useMemo(() => {
     if (filterGroupIds.length === 0) return myGroupTasks;
@@ -356,6 +361,12 @@ export default function CalendarPage() {
     );
   };
 
+  const toggleFilterPriority = (p: Priority) => {
+    setFilterPriorities((prev) =>
+      prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]
+    );
+  };
+
   const isAdminOfGroup = (groupId: string) => {
     const group = groups.find((g) => g.id === groupId);
     return group?.members.some((m) => m.userId === user?.id && m.role === GroupRole.Admin) ?? false;
@@ -380,7 +391,7 @@ export default function CalendarPage() {
     setSelectedSpecialDay(null);
   };
 
-  const activeFilterCount = filterTagIds.length + filterGroupIds.length;
+  const activeFilterCount = filterTagIds.length + filterGroupIds.length + filterPriorities.length;
 
   return (
     <div className="animate-fade-in">
@@ -453,6 +464,38 @@ export default function CalendarPage() {
                   {tag.name}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Priority filters */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-600">Önem derecesine göre filtrele</span>
+              {filterPriorities.length > 0 && (
+                <button onClick={() => setFilterPriorities([])} className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1">
+                  <X size={12} /> Temizle
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(PriorityLabels).map(([key, label]) => {
+                const p = Number(key) as Priority;
+                const color = PriorityColors[p];
+                const isActive = filterPriorities.includes(p);
+                return (
+                  <button key={key} onClick={() => toggleFilterPriority(p)}
+                    className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition-all"
+                    style={{
+                      backgroundColor: isActive ? color : 'transparent',
+                      color: isActive ? 'white' : '#6b7280',
+                      border: `2px solid ${color}`,
+                    }}>
+                    <span className="w-2.5 h-2.5 rounded-full"
+                      style={{ backgroundColor: isActive ? 'white' : color }} />
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
