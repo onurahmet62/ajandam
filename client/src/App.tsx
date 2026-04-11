@@ -14,6 +14,7 @@ import CountdownsPage from './pages/CountdownsPage';
 import GroupsPage from './pages/GroupsPage';
 import SettingsPage from './pages/SettingsPage';
 import SearchPage from './pages/SearchPage';
+import SpecialDaysPage from './pages/SpecialDaysPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -42,6 +43,7 @@ export default function App() {
           <Route path="notes" element={<NotesPage />} />
           <Route path="journal" element={<JournalPage />} />
           <Route path="countdowns" element={<CountdownsPage />} />
+          <Route path="special-days" element={<SpecialDaysPage />} />
           <Route path="groups" element={<GroupsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="search" element={<SearchPage />} />

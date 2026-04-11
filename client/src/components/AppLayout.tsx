@@ -5,7 +5,7 @@ import { useSyncStore } from '../stores/syncStore';
 import { useGroupStore } from '../stores/groupStore';
 import {
   LayoutDashboard, Calendar, ListTodo, StickyNote, BookOpen,
-  Timer, Users, Settings, LogOut, Menu, Search, Cloud, CloudOff, Bell, Check, X
+  Timer, Users, Settings, LogOut, Menu, Search, Cloud, CloudOff, Bell, Check, X, Cake
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -16,6 +16,7 @@ const navItems = [
   { path: '/notes', icon: StickyNote, label: 'Notlar' },
   { path: '/journal', icon: BookOpen, label: 'Günlük' },
   { path: '/countdowns', icon: Timer, label: 'Geri Sayımlar' },
+  { path: '/special-days', icon: Cake, label: 'Özel Günler' },
   { path: '/groups', icon: Users, label: 'Gruplar' },
   { path: '/settings', icon: Settings, label: 'Ayarlar' },
 ];
